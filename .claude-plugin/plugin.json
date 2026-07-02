@@ -1,0 +1,14 @@
+{
+  "name": "gemini-swarm",
+  "version": "0.1.0",
+  "description": "Decompose a task, dispatch the pieces to parallel agy (Antigravity CLI / Gemini) sessions, and integrate the results — the orchestrator plans and reviews while Gemini does the token-heavy bulk work.",
+  "author": {
+    "name": "Vallykrie",
+    "email": "nathansudiara@gmail.com",
+    "url": "https://github.com/Vallykrie"
+  },
+  "homepage": "https://github.com/Vallykrie/gemini-swarm-skill",
+  "repository": "https://github.com/Vallykrie/gemini-swarm-skill",
+  "license": "MIT",
+  "keywords": ["gemini", "antigravity", "agy", "swarm", "parallel", "subagents", "orchestration"]
+}

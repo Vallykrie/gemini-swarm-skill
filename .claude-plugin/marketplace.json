@@ -1,0 +1,14 @@
+{
+  "name": "gemini-swarm-skill",
+  "owner": {
+    "name": "Vallykrie",
+    "email": "nathansudiara@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "gemini-swarm",
+      "source": "./",
+      "description": "Swarm tasks across parallel Gemini sessions via the agy (Antigravity) CLI: automatic decomposition, per-subtask model routing, concurrent dispatch, and run logging."
+    }
+  ]
+}
