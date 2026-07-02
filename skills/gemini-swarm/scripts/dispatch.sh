@@ -67,7 +67,12 @@ TS="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
 RUN_DIR="$LOG_ROOT/$TS"
 mkdir -p "$RUN_DIR"
 
-AGY_FLAGS=()
+# agy --print sessions do not run in the invocation cwd (they may land in
+# agy's scratch dir), so anchor every job to the project root explicitly:
+# --add-dir puts it in the workspace, and a prompt preamble pins relative paths.
+ROOT="$(pwd)"
+
+AGY_FLAGS=(--add-dir "$ROOT")
 if [ "$MODE" = "auto" ]; then
   AGY_FLAGS+=(--dangerously-skip-permissions --sandbox)
 fi
@@ -107,10 +112,12 @@ for f in "${TASKFILES[@]}"; do
   name="$(basename "$f")"
   name="${name%.prompt.md}"; name="${name%.md}"; name="${name%.txt}"
 
-  # strip the header (and one following blank line) into the prompt actually sent
+  # strip the header (and one following blank line) into the prompt actually
+  # sent, prefixed with the working-directory anchor
   promptfile="$RUN_DIR/$name.prompt"
-  tail -n +2 "$f" | sed '1{/^[[:space:]]*$/d;}' > "$promptfile"
-  [ -s "$promptfile" ] || { echo "dispatch.sh: $f: prompt body is empty" >&2; exit 1; }
+  printf 'Working directory for this task: %s — resolve all relative paths against it.\n\n' "$ROOT" > "$promptfile"
+  tail -n +2 "$f" | sed '1{/^[[:space:]]*$/d;}' >> "$promptfile"
+  tail -n +2 "$f" | grep -q '[^[:space:]]' || { echo "dispatch.sh: $f: prompt body is empty" >&2; exit 1; }
   CLEANUP+=("$promptfile")
 
   run_one "$name" "$model" "$promptfile" &
