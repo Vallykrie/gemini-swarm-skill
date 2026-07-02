@@ -33,10 +33,9 @@ Copy the skill folder into your personal skills directory:
 ```bash
 git clone https://github.com/Vallykrie/gemini-swarm-skill
 cp -r gemini-swarm-skill/skills/gemini-swarm ~/.claude/skills/
-cp -r gemini-swarm-skill/scripts ~/.claude/skills/gemini-swarm/
 ```
 
-The skill is self-contained: `SKILL.md` holds the full playbook and `scripts/dispatch.sh` is the only dependency.
+The skill folder is self-contained: `SKILL.md` holds the full playbook and the bundled `scripts/dispatch.sh` is the only dependency.
 
 ### Other harnesses (Codex CLI, OpenCode, Antigravity CLI)
 
