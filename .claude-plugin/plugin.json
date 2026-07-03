@@ -1,7 +1,7 @@
 {
   "name": "gemini-swarm",
-  "version": "0.1.0",
-  "description": "Decompose a task, dispatch the pieces to parallel agy (Antigravity CLI / Gemini) sessions, and integrate the results — the orchestrator plans and reviews while Gemini does the token-heavy bulk work.",
+  "version": "0.2.0",
+  "description": "Make Gemini your default writer and image generator: the orchestrator plans and reviews while parallel agy (Antigravity CLI / Gemini) sessions do the writing, plus a gemini-imagegen skill that generates real images via Gemini's generate_image tool.",
   "author": {
     "name": "Vallykrie",
     "email": "nathansudiara@gmail.com",
@@ -10,5 +10,5 @@
   "homepage": "https://github.com/Vallykrie/gemini-swarm-skill",
   "repository": "https://github.com/Vallykrie/gemini-swarm-skill",
   "license": "MIT",
-  "keywords": ["gemini", "antigravity", "agy", "swarm", "parallel", "subagents", "orchestration"]
+  "keywords": ["gemini", "antigravity", "agy", "swarm", "parallel", "subagents", "orchestration", "image-generation", "nano-banana"]
 }

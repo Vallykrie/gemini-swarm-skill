@@ -8,7 +8,7 @@
     {
       "name": "gemini-swarm",
       "source": "./",
-      "description": "Swarm tasks across parallel Gemini sessions via the agy (Antigravity) CLI: automatic decomposition, per-subtask model routing, concurrent dispatch, and run logging."
+      "description": "Gemini as your default writer and image generator via the agy (Antigravity) CLI: automatic decomposition, per-subtask model routing, concurrent dispatch, run logging, and a gemini-imagegen skill for real image generation."
     }
   ]
 }

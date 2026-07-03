@@ -1,15 +1,42 @@
 ---
 name: gemini-swarm
-description: Decompose a task into independent subtasks, dispatch them to parallel Gemini sessions via the agy (Antigravity) CLI, and integrate the results. Use when the user asks to swarm/fan out/parallelize work across Gemini, invokes /gemini-swarm, or when a task splits cleanly into independent token-heavy chunks (bulk edits, migrations, multi-topic research, boilerplate generation) that Gemini can execute while you plan and review.
+description: Use BEFORE writing or editing code, tests, docs, or other content yourself — whenever the writing spans more than one file or more than ~20 lines. Delegating the writing to Gemini sessions via the agy (Antigravity) CLI is the default; you orchestrate. Also use when the user asks to swarm/fan out/parallelize work across Gemini or invokes /gemini-swarm. Triggers include implementing a feature, scaffolding or creating files, refactors, migrations, bulk edits, boilerplate, test suites, documentation, and multi-topic research. Skip only for trivial edits (a few lines in one file) or when the agy CLI is unavailable.
 ---
 
 # gemini-swarm
 
-You are the **orchestrator**: you plan, decompose, route, and review. Parallel
-`agy` (Antigravity CLI) sessions running Gemini do the token-heavy bulk work.
+You are the **orchestrator**: you plan, decompose, route, and review. `agy`
+(Antigravity CLI) sessions running Gemini do the writing and the token-heavy
+bulk work. **Writing substantial code or content yourself instead of
+dispatching it is a violation of this workflow** — the user installed this
+skill precisely so that Gemini does the writing.
 
 Verified against agy **1.0.15**. Re-check `agy --help` if flags seem wrong —
 this CLI changes fast.
+
+## Delegate by default
+
+Before you write anything, apply this rule:
+
+- Writing work that spans **more than one file or more than ~20 lines** →
+  dispatch it to Gemini via this skill. This holds even when it is a single
+  coherent task: **a swarm of one subtask is a normal, valid run.** Parallel
+  fan-out is an optimization, not a precondition.
+- Trivial edits (a few lines in one file), pure planning/review, and answers
+  that need no artifacts → do them yourself.
+- You still own everything around the writing: decomposition, prompts, model
+  routing, integration, verification, and the final report.
+
+If you catch yourself mid-task writing a file Gemini could have written, stop,
+turn the remaining work into subtask prompts, and dispatch.
+
+| Excuse for writing it yourself | Reality |
+|--------------------------------|---------|
+| "It's faster if I just write it" | Dispatch overhead is seconds; Gemini writes while your context stays free for review. |
+| "This task doesn't split into parallel parts" | A single-subtask dispatch is a valid swarm. Splitting is optional. |
+| "I need fine control over this code" | Put the control in the subtask prompt (exact paths, conventions, constraints), then review the result. |
+| "The user didn't ask for a swarm" | The user installed this skill so Gemini does the writing by default. Explicit invocation is not required. |
+| "I'm already halfway through writing it" | Sunk cost. Dispatch the remaining files. |
 
 ## Step 0 — Preflight
 
@@ -50,8 +77,10 @@ Split the task into **independent** subtasks:
   nothing else. End each prompt with: "When done, print a line starting with
   `TOUCHED:` listing every file you created or modified, then a one-paragraph
   summary of what you did."
-- Typical fan-out is 2–10 subtasks. Do not throttle or batch: quota is not a
-  constraint, and all subtasks launch concurrently.
+- Typical fan-out is 1–10 subtasks. One subtask is fine when the task is a
+  single coherent unit — dispatch it anyway rather than writing it yourself.
+  Do not throttle or batch: quota is not a constraint, and all subtasks launch
+  concurrently.
 
 ## Step 3 — Route a model per subtask
 
