@@ -4,7 +4,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Vallykrie/gemini-swarm-skill?style=social)](https://github.com/Vallykrie/gemini-swarm-skill/stargazers)
 [![GitHub last commit](https://img.shields.io/github/last-commit/Vallykrie/gemini-swarm-skill)](https://github.com/Vallykrie/gemini-swarm-skill/commits/main)
 
-**One prompt, N parallel Gemini agents, zero token cost to your orchestrator's context.** gemini-swarm is a Claude Code plugin/skill (portable to other harnesses) that turns your coding agent into a dispatcher: it splits a task into independent subtasks, fans each one out to a live `agy` (Antigravity CLI) session running the right Gemini model, and integrates the results — all while your orchestrator's context stays clean.
+**Gemini does the writing. Your orchestrator plans and reviews.** gemini-swarm is a Claude Code plugin/skill (portable to other harnesses) that makes Gemini the *default* writer for substantial work: whenever a task means writing more than a trivial amount of code or content, the orchestrator splits it into subtasks, fans each one out to a live `agy` (Antigravity CLI) session running the right Gemini model, and integrates the results — all while its own context stays clean. It also ships **gemini-imagegen**, a skill that generates real images through Gemini's `generate_image` tool — something Claude cannot do on its own.
 
 <!-- Demo: docs/demo.gif or an asciinema cast showing `/gemini-swarm auto` fanning out and returning a run log. -->
 
@@ -32,7 +32,7 @@ The orchestrator model does planning and review; Gemini does the token-heavy bul
 /plugin install gemini-swarm@gemini-swarm-skill
 ```
 
-This gives you the skill, the `/gemini-swarm` command, and the `gemini-dispatcher` subagent.
+This gives you both skills (gemini-swarm, gemini-imagegen), the `/gemini-swarm` and `/gemini-imagegen` commands, and the `gemini-dispatcher` subagent.
 
 ### Claude Code — as a plain skill (zero plugin machinery)
 
@@ -41,9 +41,10 @@ Copy the skill folder into your personal skills directory:
 ```bash
 git clone https://github.com/Vallykrie/gemini-swarm-skill
 cp -r gemini-swarm-skill/skills/gemini-swarm ~/.claude/skills/
+cp -r gemini-swarm-skill/skills/gemini-imagegen ~/.claude/skills/
 ```
 
-The skill folder is self-contained: `SKILL.md` holds the full playbook and the bundled `scripts/dispatch.sh` is the only dependency.
+The skill folders are self-contained: each `SKILL.md` holds the full playbook, and gemini-swarm's bundled `scripts/dispatch.sh` is the only dependency.
 
 ### Other harnesses (Codex CLI, OpenCode, Antigravity CLI)
 
@@ -67,7 +68,17 @@ Then just describe the task:
 
 The orchestrator splits the work into independent subtasks, assigns a model per subtask (never asking you which), launches all of them concurrently, auto-accepts the results, and writes a run log.
 
-You can also invoke the skill implicitly — ask for something like "swarm this across Gemini" or "fan this out to parallel Gemini sessions" and the skill activates with `default` mode.
+You don't need to invoke it explicitly. With the plugin installed, the skill's trigger is **delegate by default**: any writing work spanning more than one file or more than ~20 lines should activate it, so ordinary requests like "build a todo app" or "add tests for the parser" get written by Gemini with the orchestrator planning and reviewing. A single coherent task is dispatched as a swarm of one — parallel fan-out is an optimization, not a requirement. Explicit phrases ("swarm this across Gemini", "fan this out") also work, with `default` mode.
+
+### Image generation (`/gemini-imagegen`)
+
+Claude can't generate raster images — Gemini via `agy` can. The bundled **gemini-imagegen** skill dispatches an agy session whose `generate_image` tool creates the image and saves it wherever you ask:
+
+```
+/gemini-imagegen a flat-style logo of a hummingbird in teal and orange, transparent background, save as assets/logo.png
+```
+
+It also triggers implicitly whenever a task needs image assets ("make me a hero image for the landing page") or the user asks to generate/edit an image. Multiple images are dispatched in parallel, one agy job per image, and the orchestrator views each result to verify it matches before delivering.
 
 ### Autonomy modes
 
@@ -98,14 +109,17 @@ gemini-swarm/
 │   ├── plugin.json                # Claude Code plugin manifest
 │   └── marketplace.json           # so /plugin marketplace add works on this repo
 ├── skills/
-│   └── gemini-swarm/
-│       ├── SKILL.md               # the decomposition + dispatch + logging playbook
-│       └── scripts/
-│           └── dispatch.sh        # symlink-free copy for standalone skill installs
+│   ├── gemini-swarm/
+│   │   ├── SKILL.md               # the decomposition + dispatch + logging playbook
+│   │   └── scripts/
+│   │       └── dispatch.sh        # symlink-free copy for standalone skill installs
+│   └── gemini-imagegen/
+│       └── SKILL.md               # image generation via Gemini's generate_image tool
 ├── agents/
 │   └── gemini-dispatcher.md       # cheap Bash-only subagent that runs the dispatch
 ├── commands/
-│   └── gemini-swarm.md            # /gemini-swarm default|auto|request
+│   ├── gemini-swarm.md            # /gemini-swarm default|auto|request
+│   └── gemini-imagegen.md         # /gemini-imagegen <image description>
 ├── docs/
 │   └── harnesses.md               # Codex CLI / OpenCode / Antigravity adapter notes
 └── scripts/
