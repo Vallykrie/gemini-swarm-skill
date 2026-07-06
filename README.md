@@ -4,11 +4,31 @@
 [![GitHub stars](https://img.shields.io/github/stars/Vallykrie/gemini-swarm-skill?style=social)](https://github.com/Vallykrie/gemini-swarm-skill/stargazers)
 [![GitHub last commit](https://img.shields.io/github/last-commit/Vallykrie/gemini-swarm-skill)](https://github.com/Vallykrie/gemini-swarm-skill/commits/main)
 
-**Gemini does the writing. Your orchestrator plans and reviews.** gemini-swarm is a Claude Code plugin/skill (portable to other harnesses) that makes Gemini the *default* writer for substantial work: whenever a task means writing more than a trivial amount of code or content, the orchestrator splits it into subtasks, fans each one out to a live `agy` (Antigravity CLI) session running the right Gemini model, and integrates the results — all while its own context stays clean. It also ships **gemini-imagegen**, a skill that generates real images through Gemini's `generate_image` tool — something Claude cannot do on its own.
+> **Gemini does the writing. Your orchestrator plans and reviews.**
+
+gemini-swarm is a Claude Code plugin/skill (portable to other harnesses) that makes Gemini the *default* writer for substantial work. Whenever a task means writing more than a trivial amount of code or content, your orchestrator splits it into subtasks, fans each one out to a live `agy` ([Antigravity CLI](https://antigravity.google)) session running the right Gemini model, and integrates the results — all while its own context stays clean. It also ships **gemini-imagegen** for generating real images through Gemini's `generate_image` tool, something Claude can't do on its own.
 
 <!-- Demo: docs/demo.gif or an asciinema cast showing `/gemini-swarm auto` fanning out and returning a run log. -->
 
-Concretely, the orchestrator:
+## Contents
+
+**New here?**
+- [What it does](#what-it-does) — the idea, and the four steps it runs
+- [Use cases](#use-cases-when-it-pays-off) — is this the right fit for my task?
+
+**Installing?**
+- [Getting started](#getting-started) — full setup, ~5 min from a clean machine
+- [Already have `agy`? Jump to Step 3](#step-3-install-the-plugin) — just add the plugin
+- [Other install methods](#other-install-methods) — plain skill, or another harness
+
+**Reference**
+- [Usage & commands](#usage) · [Autonomy modes](#autonomy-modes) · [Run logs](#run-logs) · [How it works](#how-it-works)
+
+---
+
+## What it does
+
+The orchestrator:
 
 1. **Decomposes** a task into independent subtasks (different files, modules, or research topics — no shared-state conflicts),
 2. **Routes** each subtask to the right Gemini model via the [Antigravity CLI](https://antigravity.google) (`agy`) — reasoning-heavy work to `Gemini 3.1 Pro (High)`, bulk/mechanical work to `Gemini 3.5 Flash`,
@@ -16,6 +36,8 @@ Concretely, the orchestrator:
 4. **Integrates** the results, writing a run log to `.gemini-swarm/logs/`.
 
 The orchestrator model does planning and review; Gemini does the token-heavy bulk work.
+
+---
 
 ## Getting started
 
@@ -56,7 +78,7 @@ On first run it opens Google Sign-In (or prints an authorization URL for remote/
 
 > That's the whole `agy` side. Everything below runs `agy` for you — you won't open it by hand again.
 
-### Step 3 — Install the plugin (Claude Code)
+### Step 3: Install the plugin
 
 This is **two separate commands** — run them one at a time at the Claude Code prompt:
 
@@ -70,6 +92,8 @@ This is **two separate commands** — run them one at a time at the Claude Code 
 > ⚠️ Don't paste both onto one line, and don't paste `/plugin install …` into the "Add Marketplace / Enter marketplace source" box — that field wants **only** the source (`Vallykrie/gemini-swarm-skill`). The install is a second, separate step.
 
 This gives you both skills (gemini-swarm, gemini-imagegen), the `/gemini-swarm` and `/gemini-imagegen` commands, and the `gemini-dispatcher` subagent. You're ready — jump to [Usage](#usage).
+
+---
 
 ## Other install methods
 
@@ -88,6 +112,8 @@ The skill folders are self-contained: each `SKILL.md` holds the full playbook, a
 ### Other harnesses (Codex CLI, OpenCode, Antigravity CLI)
 
 The core logic is one Markdown playbook (`skills/gemini-swarm/SKILL.md`) plus one shell script. See [`docs/harnesses.md`](docs/harnesses.md) for thin adapter instructions per harness.
+
+---
 
 ## Usage
 
@@ -119,7 +145,7 @@ Claude can't generate raster images — Gemini via `agy` can. The bundled **gemi
 
 It also triggers implicitly whenever a task needs image assets ("make me a hero image for the landing page") or the user asks to generate/edit an image. Multiple images are dispatched in parallel, one agy job per image, and the orchestrator views each result to verify it matches before delivering.
 
-### When to reach for it — a worked example
+### Use cases: when it pays off
 
 gemini-swarm pays off whenever a task splits into **independent chunks that don't share state** — so they can run at once without stepping on each other — and the bulk of the work is mechanical enough to hand to Gemini while your orchestrator just plans and reviews.
 
@@ -160,6 +186,8 @@ Every swarm run writes `.gemini-swarm/logs/<ISO-timestamp>.md` in your project, 
 
 Output is auto-accepted — the log is the audit trail, not a review gate. Add `.gemini-swarm/` to your project's `.gitignore` if you don't want logs committed.
 
+---
+
 ## Repo layout
 
 ```
@@ -186,6 +214,8 @@ gemini-swarm/
 └── scripts/
     └── dispatch.sh                # parallel dispatcher (source of truth)
 ```
+
+---
 
 ## How it works
 
