@@ -17,22 +17,61 @@ Concretely, the orchestrator:
 
 The orchestrator model does planning and review; Gemini does the token-heavy bulk work.
 
-## Requirements
+## Getting started
 
-- [`agy`](https://antigravity.google) (Antigravity CLI) on your `PATH`, logged in. Built and tested against agy **1.0.15**.
-- Your project directory must be a trusted workspace in agy (run `agy` once interactively in the directory to trust it).
-- Bash (the dispatcher is a plain shell script).
+You need three things: the Antigravity CLI (`agy`), a logged-in + trusted workspace, and this plugin. ~5 minutes from a clean machine.
 
-## Install
+### Step 1 — Install the Antigravity CLI (`agy`)
 
-### Claude Code — as a plugin (recommended)
+`agy` is Google's terminal agent; it's the process that actually runs each Gemini job. Install it with the official one-line script (no Node/Python needed — it's a single Go binary):
+
+```bash
+# macOS / Linux
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+```
+
+```powershell
+# Windows PowerShell
+irm https://antigravity.google/cli/install.ps1 | iex
+```
+
+The script drops the binary at `~/.local/bin/agy` (macOS/Linux) and adds it to your `PATH`. **Open a new terminal**, then confirm it's reachable:
+
+```bash
+agy --version      # built & tested against agy 1.0.15
+```
+
+If `agy: command not found`, add its directory to your `PATH` (`export PATH="$HOME/.local/bin:$PATH"` in your shell profile) and reopen the terminal.
+
+### Step 2 — Log in and trust your project
+
+Run `agy` once, interactively, **inside the project you want to swarm in**:
+
+```bash
+cd /path/to/your/project
+agy
+```
+
+On first run it opens Google Sign-In (or prints an authorization URL for remote/SSH sessions — complete it in a local browser). It also asks whether to **trust this workspace** — say yes. This trust is per-directory, so repeat `agy` once in each new project. Type `/quit` (or Ctrl-C) to exit once you're logged in and trusted.
+
+> That's the whole `agy` side. Everything below runs `agy` for you — you won't open it by hand again.
+
+### Step 3 — Install the plugin (Claude Code)
+
+This is **two separate commands** — run them one at a time at the Claude Code prompt:
 
 ```
 /plugin marketplace add Vallykrie/gemini-swarm-skill
+```
+```
 /plugin install gemini-swarm@gemini-swarm-skill
 ```
 
-This gives you both skills (gemini-swarm, gemini-imagegen), the `/gemini-swarm` and `/gemini-imagegen` commands, and the `gemini-dispatcher` subagent.
+> ⚠️ Don't paste both onto one line, and don't paste `/plugin install …` into the "Add Marketplace / Enter marketplace source" box — that field wants **only** the source (`Vallykrie/gemini-swarm-skill`). The install is a second, separate step.
+
+This gives you both skills (gemini-swarm, gemini-imagegen), the `/gemini-swarm` and `/gemini-imagegen` commands, and the `gemini-dispatcher` subagent. You're ready — jump to [Usage](#usage).
+
+## Other install methods
 
 ### Claude Code — as a plain skill (zero plugin machinery)
 
@@ -79,6 +118,28 @@ Claude can't generate raster images — Gemini via `agy` can. The bundled **gemi
 ```
 
 It also triggers implicitly whenever a task needs image assets ("make me a hero image for the landing page") or the user asks to generate/edit an image. Multiple images are dispatched in parallel, one agy job per image, and the orchestrator views each result to verify it matches before delivering.
+
+### When to reach for it — a worked example
+
+gemini-swarm pays off whenever a task splits into **independent chunks that don't share state** — so they can run at once without stepping on each other — and the bulk of the work is mechanical enough to hand to Gemini while your orchestrator just plans and reviews.
+
+**Scenario:** you have a repo with 20 API-route files and no tests. Writing them serially in your main agent would burn its whole context window on boilerplate.
+
+```
+/gemini-swarm auto
+Write unit tests for every file in src/routes/. One test file per route,
+covering the happy path and the main error cases. Match the existing style
+in tests/.
+```
+
+What happens:
+
+1. The orchestrator **decomposes** it into ~20 independent subtasks (one per route — no two touch the same file, so no conflicts).
+2. It **routes** each: mechanical test-writing → `Gemini 3.5 Flash`; anything needing deeper reasoning → `Gemini 3.1 Pro (High)`. It never asks you which.
+3. All ~20 `agy` jobs **run in parallel**, each writing its own test file directly to disk.
+4. The orchestrator **integrates**: confirms every file landed, writes a run log to `.gemini-swarm/logs/`, and reports back a short summary — *not* 20 walls of Gemini output.
+
+Your main agent's context stays clean; the token-heavy grind happened in the Gemini sessions. Other good fits: porting many modules to a new language, generating docstrings across a package, researching several topics at once, refactoring a set of unrelated files. **Poor fits:** one big file everything edits, or steps that must happen in order — those have no parallelism to exploit.
 
 ### Autonomy modes
 
