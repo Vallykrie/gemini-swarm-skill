@@ -14,6 +14,7 @@ gemini-swarm is a Claude Code plugin/skill (portable to other harnesses) that ma
 
 **New here?**
 - [What it does](#what-it-does) — the idea, and the four steps it runs
+- [Why this exists](#why-this-exists) — the unused-free-Gemini-Pro problem it solves
 - [Use cases](#use-cases-when-it-pays-off) — is this the right fit for my task?
 
 **Installing?**
@@ -36,6 +37,16 @@ The orchestrator:
 4. **Integrates** the results, writing a run log to `.gemini-swarm/logs/`.
 
 The orchestrator model does planning and review; Gemini does the token-heavy bulk work.
+
+---
+
+## Why this exists
+
+In 2025, Google gave students a **free year of Gemini Pro**. Most of us claimed it and then barely touched it — because for real work (writing code, debugging, thinking through a design) Claude and ChatGPT are simply better, so we pay for those and leave the free Gemini plan sitting idle. It's the most wasted subscription in every student's account.
+
+But not all work is *hard* work. A big task is usually ~5% hard reasoning (deciding what to do) and ~95% mechanical grind (typing out twenty near-identical files). Making your expensive, smart model do the grind burns its context window *and* your money on the most boilerplate text imaginable.
+
+gemini-swarm splits those roles: your smart, paid model plans and reviews, while **Gemini does the token-heavy writing in parallel — on the free plan you already have.** The companion skill, gemini-imagegen, goes further and does something Claude *can't do at all* — generate real images — again through that same free Gemini plan. Right AI for the right job, and your unused free credits finally earn their keep.
 
 ---
 
