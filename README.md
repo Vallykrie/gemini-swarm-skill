@@ -32,7 +32,7 @@ gemini-swarm is a Claude Code plugin/skill (portable to other harnesses) that ma
 The orchestrator:
 
 1. **Decomposes** a task into independent subtasks (different files, modules, or research topics — no shared-state conflicts),
-2. **Routes** each subtask to the right Gemini model via the [Antigravity CLI](https://antigravity.google) (`agy`) — reasoning-heavy work to `Gemini 3.1 Pro (High)`, bulk/mechanical work to `Gemini 3.6 Flash`,
+2. **Routes** each subtask to the right Gemini model via the [Antigravity CLI](https://antigravity.google) (`agy`) — reasoning-heavy work to `Gemini 3.1 Pro (High)`, bulk/mechanical work to `Gemini 3.7 Flash`,
 3. **Dispatches** all subtasks in parallel `agy` sessions, and
 4. **Integrates** the results, writing a run log to `.gemini-swarm/logs/`.
 
@@ -172,7 +172,7 @@ in tests/.
 What happens:
 
 1. The orchestrator **decomposes** it into ~20 independent subtasks (one per route — no two touch the same file, so no conflicts).
-2. It **routes** each: mechanical test-writing → `Gemini 3.6 Flash`; anything needing deeper reasoning → `Gemini 3.1 Pro (High)`. It never asks you which.
+2. It **routes** each: mechanical test-writing → `Gemini 3.7 Flash`; anything needing deeper reasoning → `Gemini 3.1 Pro (High)`. It never asks you which.
 3. All ~20 `agy` jobs **run in parallel**, each writing its own test file directly to disk.
 4. The orchestrator **integrates**: confirms every file landed, writes a run log to `.gemini-swarm/logs/`, and reports back a short summary — *not* 20 walls of Gemini output.
 
