@@ -89,10 +89,10 @@ Choose per subtask, automatically — never ask the user which model:
 - **`Gemini 3.1 Pro (High)`** — reasoning-heavy or ambiguous work: debugging,
   architecture, tricky refactors, analysis with judgment calls, anything where
   a wrong answer is expensive.
-- **`Gemini 3.6 Flash`** — bulk, boilerplate, or mechanical work: mass
+- **`Gemini 3.7 Flash`** — bulk, boilerplate, or mechanical work: mass
   renames, format conversions, test scaffolding, doc generation, summarizing
-  files, straightforward CRUD. Use the exact string `Gemini 3.6 Flash (High)`
-  for mechanical-but-fiddly work and `Gemini 3.6 Flash (Medium)` for plain
+  files, straightforward CRUD. Use the exact string `Gemini 3.7 Flash (High)`
+  for mechanical-but-fiddly work and `Gemini 3.7 Flash (Medium)` for plain
   bulk work.
 
 These are exact `agy models` names — pass them verbatim to the `MODEL:` header.
@@ -104,7 +104,7 @@ Create one prompt file per subtask in a temp directory (e.g.
 then a blank line, then the prompt:
 
 ```
-MODEL: Gemini 3.6 Flash (Medium)
+MODEL: Gemini 3.7 Flash (Medium)
 
 Summarize the public API of src/parser/ ...
 ```
@@ -151,7 +151,7 @@ succeeded/failed, and total wall-clock time.>
 ## Subtasks
 
 ### 01-short-slug — ok | FAIL
-- **Model**: Gemini 3.6 Flash (Medium)
+- **Model**: Gemini 3.7 Flash (Medium)
 - **Duration**: NNs
 - **Files/artifacts touched**: `path/a`, `path/b` (from the TOUCHED: line;
   "none" for research tasks — note the .out artifact instead)
