@@ -28,6 +28,13 @@ All workloads currently use `flash-high`, including heavy reasoning. A future
 Pro route requires an explicit policy change and corresponding validation
 updates; availability alone must not activate it.
 
+## Publishing updates
+
+Bump `version` in `.claude-plugin/plugin.json` for every published skill or
+model-policy change, run the checks, and merge to `main`. Keep the version in
+that manifest only. Users must enable marketplace auto-update or update manually;
+manual folder copies need to be recopied. See the README for user instructions.
+
 ## Dispatcher changes
 
 Edit `scripts/dispatch.sh`, then copy it to

@@ -112,6 +112,32 @@ This gives you both skills (gemini-swarm, gemini-imagegen), the `/gemini-swarm` 
 
 ---
 
+## Keeping the skill updated
+
+For Claude Code marketplace installs, enable updates once: open `/plugin`, go
+to **Marketplaces**, select **gemini-swarm-skill**, and select **Enable
+auto-update**. Third-party marketplace auto-updates are off by default.
+Restart the session after an update, or run `/reload-plugins` to load it.
+See the [official update documentation](https://code.claude.com/docs/en/discover-plugins#keep-plugins-updated).
+
+To update immediately, run these commands in your terminal:
+
+```bash
+claude plugin marketplace update gemini-swarm-skill
+claude plugin update gemini-swarm@gemini-swarm-skill
+```
+
+Manually copied skill folders are snapshots and do not update themselves.
+Pull the latest repository with `git pull --ff-only` and repeat the copy steps
+below for both complete skill folders, including their model catalogs. Remove
+an older manual installation when switching to the plugin to avoid loading
+conflicting copies.
+
+Maintainers must bump `.claude-plugin/plugin.json`'s version when publishing
+skill or model-policy changes. Updating Git alone is not sufficient for clients
+that already cache the same plugin version. Existing installations must receive
+an update before the new routing policy can take effect.
+
 ## Other install methods
 
 ### Claude Code — as a plain skill (zero plugin machinery)
