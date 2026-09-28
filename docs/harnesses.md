@@ -30,7 +30,8 @@ mkdir -p ~/.codex/prompts
   echo '---'
   echo 'The dispatcher script is at ~/.gemini-swarm/scripts/dispatch.sh.'
   echo 'Mode/task arguments: $ARGUMENTS'
-  cat ~/.gemini-swarm/skills/gemini-swarm/SKILL.md
+  echo 'Follow ~/.gemini-swarm/skills/gemini-swarm/SKILL.md.'
+  echo 'Resolve its references relative to that skill directory.'
 } > ~/.codex/prompts/gemini-swarm.md
 ```
 
@@ -45,8 +46,8 @@ always-on version, append a short pointer to your project's `AGENTS.md`:
 `--yolo` ⇒ dispatch `--auto`; `suggest`/`auto-edit` (approval required) ⇒
 dispatch `--request`.
 
-**Notes:** Codex has no subagents, so skip the `gemini-dispatcher` layer — the
-main agent runs `dispatch.sh` itself (the script already keeps raw Gemini
+**Notes:** When the `gemini-dispatcher` agent is unavailable, the host agent
+runs `dispatch.sh` itself (the script already keeps raw Gemini
 output on disk, not in stdout, so context stays clean).
 
 ---
@@ -126,7 +127,7 @@ the host *is* agy:
 
 Minimum viable adapter for any agent that can run shell commands:
 
-1. Put `SKILL.md` where the agent will read it when the user asks to "swarm"
+1. Copy the complete skill directory, including `references/models.md`, where the agent will read it when the user asks to "swarm"
    a task (system prompt include, rules file, `AGENTS.md`, etc.).
 2. Make sure `scripts/dispatch.sh` exists at a path mentioned alongside it.
 3. Map the host's permission mode to `--auto` / `--request` for the skill's

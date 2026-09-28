@@ -1,1 +1,7 @@
 .gemini-swarm/
+
+# Machine-local agent configuration and worktrees
+.claude/
+
+# macOS metadata
+.DS_Store

@@ -10,14 +10,18 @@ Claude cannot generate raster images. Gemini sessions launched through the
 dispatches an agy job that generates the image and saves it to a file you
 specify.
 
-Verified against agy **1.0.15** (model `Gemini 3.1 Pro (High)`, tool name
-`generate_image`). Re-check `agy --help` if flags seem wrong.
+Read the [model catalog](references/models.md) and use its `flash-high` profile.
+Check `agy --help` if flags differ in your installed version. Image-tool
+availability must be checked in the session; model listing alone does not
+verify image generation.
 
 ## Step 0 — Preflight
 
 1. `command -v agy` — if missing, stop and tell the user to install the
    Antigravity CLI (https://antigravity.google).
-2. Decide the **absolute** output path(s) for the image(s). agy `--print`
+2. Run `agy models` and confirm the catalog’s exact model is available. Do not
+   substitute a Pro model if it is missing.
+3. Decide the **absolute** output path(s) for the image(s). agy `--print`
    sessions do not run in your invocation cwd, so relative paths land in the
    wrong place — always pass absolute paths in the prompt and `--add-dir` the
    destination directory.
@@ -40,11 +44,11 @@ directory too, and ask Gemini to load it before generating the edited version.
 
 ## Step 2 — Dispatch
 
-One image (verified command shape — adapt prompt and paths):
+One image (replace the model placeholder from the catalog, plus prompt and paths):
 
 ```bash
 agy --print "Use your generate_image tool to create: <detailed image prompt>. Save the final image to /abs/path/out.png. When it is saved, print IMAGE_OK followed by the file path. If you cannot generate images, print IMAGE_UNSUPPORTED and stop." \
-  --model "Gemini 3.1 Pro (High)" \
+  --model "<exact agy model name from references/models.md>" \
   --print-timeout 5m \
   --add-dir /abs/path \
   --dangerously-skip-permissions --sandbox
@@ -56,7 +60,7 @@ agy --print "Use your generate_image tool to create: <detailed image prompt>. Sa
 - **Multiple images:** dispatch them in parallel, one agy job per image —
   either background several of the above commands, or reuse the gemini-swarm
   dispatcher (`scripts/dispatch.sh`) with one `NN-slug.prompt.md` per image
-  (`MODEL: Gemini 3.1 Pro (High)` header). Never generate sequentially.
+  (`MODEL: <exact agy model name from references/models.md>` header). Never generate sequentially.
 
 ## Step 3 — Verify and deliver
 

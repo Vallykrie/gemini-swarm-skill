@@ -8,13 +8,11 @@
 
 gemini-swarm is a Claude Code plugin/skill (portable to other harnesses) that makes Gemini the *default* writer for substantial work. Whenever a task means writing more than a trivial amount of code or content, your orchestrator splits it into subtasks, fans each one out to a live `agy` ([Antigravity CLI](https://antigravity.google)) session running the right Gemini model, and integrates the results — all while its own context stays clean. It also ships **gemini-imagegen** for generating real images through Gemini's `generate_image` tool, something Claude can't do on its own.
 
-<!-- Demo: docs/demo.gif or an asciinema cast showing `/gemini-swarm auto` fanning out and returning a run log. -->
-
 ## Contents
 
 **New here?**
 - [What it does](#what-it-does) — the idea, and the four steps it runs
-- [Why this exists](#why-this-exists) — the unused-free-Gemini-Pro problem it solves
+- [Why this exists](#why-this-exists) — separate orchestration from execution
 - [Use cases](#use-cases-when-it-pays-off) — is this the right fit for my task?
 
 **Installing?**
@@ -32,7 +30,7 @@ gemini-swarm is a Claude Code plugin/skill (portable to other harnesses) that ma
 The orchestrator:
 
 1. **Decomposes** a task into independent subtasks (different files, modules, or research topics — no shared-state conflicts),
-2. **Routes** each subtask to the right Gemini model via the [Antigravity CLI](https://antigravity.google) (`agy`) — reasoning-heavy work to `Gemini 3.1 Pro (High)`, bulk/mechanical work to `Gemini 3.7 Flash`,
+2. **Routes** each subtask to the right Gemini model via the [Antigravity CLI](https://antigravity.google) (`agy`) — all work, including heavy reasoning, to the `flash-high` profile from the [model catalog](skills/gemini-swarm/references/models.md),
 3. **Dispatches** all subtasks in parallel `agy` sessions, and
 4. **Integrates** the results, writing a run log to `.gemini-swarm/logs/`.
 
@@ -42,11 +40,19 @@ The orchestrator model does planning and review; Gemini does the token-heavy bul
 
 ## Why this exists
 
-In 2025, Google gave students a **free year of Gemini Pro**. Most of us claimed it and then barely touched it — because for real work (writing code, debugging, thinking through a design) Claude and ChatGPT are simply better, so we pay for those and leave the free Gemini plan sitting idle. It's the most wasted subscription in every student's account.
+Large tasks can fill an orchestrator’s context with intermediate output. This
+plugin separates planning and review from execution: the host agent defines
+independent tasks, Gemini sessions produce the artifacts, and the host reviews
+and integrates the results.
 
-But not all work is *hard* work. A big task is usually ~5% hard reasoning (deciding what to do) and ~95% mechanical grind (typing out twenty near-identical files). Making your expensive, smart model do the grind burns its context window *and* your money on the most boilerplate text imaginable.
+Each session writes its output to disk, leaving the orchestrator with a compact
+status report and an auditable run log. Both routine and reasoning-heavy work
+use the same High-thinking Flash profile. Pro routing is disabled; the
+[model catalog](skills/gemini-swarm/references/models.md) records the current
+selection and the policy for adopting a future Pro release.
 
-gemini-swarm splits those roles: your smart, paid model plans and reviews, while **Gemini does the token-heavy writing in parallel — on the free plan you already have.** The companion skill, gemini-imagegen, goes further and does something Claude *can't do at all* — generate real images — again through that same free Gemini plan. Right AI for the right job, and your unused free credits finally earn their keep.
+Access, quotas, and available tools depend on your Antigravity account. This
+repository does not provide model access or guarantee a free usage tier.
 
 ---
 
@@ -118,7 +124,7 @@ cp -r gemini-swarm-skill/skills/gemini-swarm ~/.claude/skills/
 cp -r gemini-swarm-skill/skills/gemini-imagegen ~/.claude/skills/
 ```
 
-The skill folders are self-contained: each `SKILL.md` holds the full playbook, and gemini-swarm's bundled `scripts/dispatch.sh` is the only dependency.
+The skill folders are self-contained: each `SKILL.md` holds the full playbook, a bundled model catalog records the routing policy, and gemini-swarm includes its dispatcher script.
 
 ### Other harnesses (Codex CLI, OpenCode, Antigravity CLI)
 
@@ -172,7 +178,7 @@ in tests/.
 What happens:
 
 1. The orchestrator **decomposes** it into ~20 independent subtasks (one per route — no two touch the same file, so no conflicts).
-2. It **routes** each: mechanical test-writing → `Gemini 3.7 Flash`; anything needing deeper reasoning → `Gemini 3.1 Pro (High)`. It never asks you which.
+2. It **routes** each using the [model catalog](skills/gemini-swarm/references/models.md): both mechanical test-writing and deeper reasoning use `flash-high`. It never asks you which.
 3. All ~20 `agy` jobs **run in parallel**, each writing its own test file directly to disk.
 4. The orchestrator **integrates**: confirms every file landed, writes a run log to `.gemini-swarm/logs/`, and reports back a short summary — *not* 20 walls of Gemini output.
 
@@ -211,9 +217,12 @@ gemini-swarm/
 ├── skills/
 │   ├── gemini-swarm/
 │   │   ├── SKILL.md               # the decomposition + dispatch + logging playbook
+│   │   ├── references/
+│   │   │   └── models.md          # single source of truth for model routing
 │   │   └── scripts/
 │   │       └── dispatch.sh        # symlink-free copy for standalone skill installs
 │   └── gemini-imagegen/
+│       ├── references/models.md   # catalog copy for standalone installation
 │       └── SKILL.md               # image generation via Gemini's generate_image tool
 ├── agents/
 │   └── gemini-dispatcher.md       # cheap Bash-only subagent that runs the dispatch
@@ -223,6 +232,7 @@ gemini-swarm/
 ├── docs/
 │   └── harnesses.md               # Codex CLI / OpenCode / Antigravity adapter notes
 └── scripts/
+    ├── check-model-catalog.sh     # checks model policy and bundled copies
     └── dispatch.sh                # parallel dispatcher (source of truth)
 ```
 
@@ -233,6 +243,11 @@ gemini-swarm/
 - **One source of truth**: all orchestration logic lives in `SKILL.md`; the plugin command, the subagent, and the other-harness adapters are thin wrappers around it.
 - **Context hygiene**: the `gemini-dispatcher` subagent (a cheap model with only Bash/Read/Write) calls `scripts/dispatch.sh`, waits for all jobs, writes the run log, and returns *only a short summary plus the log path*. Raw Gemini stdout never enters the orchestrator's context.
 - **True parallelism**: `dispatch.sh` launches every `agy --print` job concurrently with `&` and `wait`s for all of them. No concurrency cap, no throttling.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for repository checks and model-update
+requirements. Run `bash scripts/check-model-catalog.sh` before submitting changes.
 
 ## License
 

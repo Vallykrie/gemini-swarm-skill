@@ -84,18 +84,17 @@ Split the task into **independent** subtasks:
 
 ## Step 3 — Route a model per subtask
 
-Choose per subtask, automatically — never ask the user which model:
+Read the [model catalog](references/models.md), then choose a profile per
+subtask automatically — never ask the user which model:
 
-- **`Gemini 3.1 Pro (High)`** — reasoning-heavy or ambiguous work: debugging,
-  architecture, tricky refactors, analysis with judgment calls, anything where
-  a wrong answer is expensive.
-- **`Gemini 3.7 Flash`** — bulk, boilerplate, or mechanical work: mass
-  renames, format conversions, test scaffolding, doc generation, summarizing
-  files, straightforward CRUD. Use the exact string `Gemini 3.7 Flash (High)`
-  for mechanical-but-fiddly work and `Gemini 3.7 Flash (Medium)` for plain
-  bulk work.
+- `flash-high` for all tasks, including reasoning-heavy or ambiguous work,
+  architecture, debugging, refactoring, and plain bulk work.
+- Do not route to Pro or lower thinking levels. Follow the catalog’s policy
+  if the configured model is unavailable.
 
-These are exact `agy models` names — pass them verbatim to the `MODEL:` header.
+Copy the profile's exact `agy` model name from the catalog into the `MODEL:`
+header. The catalog is the single source of truth; never infer or hard-code a
+version elsewhere in this skill.
 
 ## Step 4 — Write the subtask files
 
@@ -104,7 +103,7 @@ Create one prompt file per subtask in a temp directory (e.g.
 then a blank line, then the prompt:
 
 ```
-MODEL: Gemini 3.7 Flash (Medium)
+MODEL: <exact agy model name from references/models.md>
 
 Summarize the public API of src/parser/ ...
 ```
@@ -151,7 +150,7 @@ succeeded/failed, and total wall-clock time.>
 ## Subtasks
 
 ### 01-short-slug — ok | FAIL
-- **Model**: Gemini 3.7 Flash (Medium)
+- **Model**: <exact model name from the subtask's MODEL header>
 - **Duration**: NNs
 - **Files/artifacts touched**: `path/a`, `path/b` (from the TOUCHED: line;
   "none" for research tasks — note the .out artifact instead)

@@ -3,7 +3,7 @@
 #
 # Each TASKFILE is a subtask prompt file. Its first line must be a model header:
 #
-#     MODEL: Gemini 3.1 Pro (High)
+#     MODEL: <exact agy model name from the skill model catalog>
 #
 #     <the subtask prompt, any number of lines>
 #
