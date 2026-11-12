@@ -1,6 +1,6 @@
 {
   "name": "gemini-swarm",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Make Gemini your default writer and image generator: the orchestrator plans and reviews while parallel agy (Antigravity CLI / Gemini) sessions do the writing, plus a gemini-imagegen skill that generates real images via Gemini's generate_image tool.",
   "author": {
     "name": "Vallykrie",

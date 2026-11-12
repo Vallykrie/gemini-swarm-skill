@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate model routing and bundled assets
-        run: bash scripts/check-model-catalog.sh
+      - name: Validate skills, scripts and model listing
+        run: bash scripts/check-repo.sh
       - name: Check whitespace
         run: git show --format= --check HEAD

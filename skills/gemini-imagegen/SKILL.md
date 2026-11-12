@@ -10,17 +10,22 @@ Claude cannot generate raster images. Gemini sessions launched through the
 dispatches an agy job that generates the image and saves it to a file you
 specify.
 
-Read the [model catalog](references/models.md) and use its `flash-high` profile.
-Check `agy --help` if flags differ in your installed version. Image-tool
-availability must be checked in the session; model listing alone does not
-verify image generation.
+You choose the model from the live list of agy models; see the
+[model routing guide](references/models.md). Never copy a model name from
+memory. Check `agy --help` if flags differ in your installed version.
+Image-tool availability must be checked in the session; model listing alone
+does not verify image generation.
 
 ## Step 0 — Preflight
 
 1. `command -v agy` — if missing, stop and tell the user to install the
    Antigravity CLI (https://antigravity.google).
-2. Run `agy models` and confirm the catalog’s exact model is available. Do not
-   substitute a Pro model if it is missing.
+2. Run `bash <skill-dir>/scripts/list-models.sh`
+   (`${CLAUDE_PLUGIN_ROOT}/scripts/list-models.sh` in a plugin install). It
+   prints the newest Gemini models in agy. Pick the Fast (`Flash`) family at
+   High thinking for ordinary images; pick the Flagship family when the image
+   needs careful composition, legible text, or an exact edit. Use the model
+   id from the first column.
 3. Decide the **absolute** output path(s) for the image(s). agy `--print`
    sessions do not run in your invocation cwd, so relative paths land in the
    wrong place — always pass absolute paths in the prompt and `--add-dir` the
@@ -44,11 +49,11 @@ directory too, and ask Gemini to load it before generating the edited version.
 
 ## Step 2 — Dispatch
 
-One image (replace the model placeholder from the catalog, plus prompt and paths):
+One image (substitute the prompt, paths, and the model id you chose):
 
 ```bash
 agy --print "Use your generate_image tool to create: <detailed image prompt>. Save the final image to /abs/path/out.png. When it is saved, print IMAGE_OK followed by the file path. If you cannot generate images, print IMAGE_UNSUPPORTED and stop." \
-  --model "<exact agy model name from references/models.md>" \
+  --model <model id from list-models.sh> \
   --print-timeout 5m \
   --add-dir /abs/path \
   --dangerously-skip-permissions --sandbox
@@ -60,7 +65,8 @@ agy --print "Use your generate_image tool to create: <detailed image prompt>. Sa
 - **Multiple images:** dispatch them in parallel, one agy job per image —
   either background several of the above commands, or reuse the gemini-swarm
   dispatcher (`scripts/dispatch.sh`) with one `NN-slug.prompt.md` per image
-  (`MODEL: <exact agy model name from references/models.md>` header). Never generate sequentially.
+  (`MODEL: <model id>` header; the dispatcher checks it against the live
+  list). Never generate sequentially.
 
 ## Step 3 — Verify and deliver
 

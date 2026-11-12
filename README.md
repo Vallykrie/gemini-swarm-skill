@@ -30,7 +30,7 @@ gemini-swarm is a Claude Code plugin/skill (portable to other harnesses) that ma
 The orchestrator:
 
 1. **Decomposes** a task into independent subtasks (different files, modules, or research topics — no shared-state conflicts),
-2. **Routes** each subtask to the right Gemini model via the [Antigravity CLI](https://antigravity.google) (`agy`) — all work, including heavy reasoning, to the `flash-high` profile from the [model catalog](skills/gemini-swarm/references/models.md),
+2. **Routes** each subtask to the right Gemini model via the [Antigravity CLI](https://antigravity.google) (`agy`): it reads the live list of the newest Gemini models from `agy models` and picks a model and thinking level per subtask, following the [model routing guide](skills/gemini-swarm/references/models.md),
 3. **Dispatches** all subtasks in parallel `agy` sessions, and
 4. **Integrates** the results, writing a run log to `.gemini-swarm/logs/`.
 
@@ -46,10 +46,10 @@ independent tasks, Gemini sessions produce the artifacts, and the host reviews
 and integrates the results.
 
 Each session writes its output to disk, leaving the orchestrator with a compact
-status report and an auditable run log. Both routine and reasoning-heavy work
-use the same High-thinking Flash profile. Pro routing is disabled; the
-[model catalog](skills/gemini-swarm/references/models.md) records the current
-selection and the policy for adopting a future Pro release.
+status report and an auditable run log. Bulk work goes to a fast model and
+the hard parts go to the flagship; the orchestrator decides per subtask from
+what agy offers right now, so a new Gemini release is used as soon as it
+appears in `agy models`, with no update to this repository.
 
 Access, quotas, and available tools depend on your Antigravity account. This
 repository does not provide model access or guarantee a free usage tier.
@@ -114,6 +114,18 @@ This gives you both skills (gemini-swarm, gemini-imagegen), the `/gemini-swarm` 
 
 ## Keeping the skill updated
 
+**Model choice needs no updates.** No model names are stored in this
+repository. Each run, the orchestrator calls `scripts/list-models.sh`, which
+reads `agy models` and keeps only the newest version of each Gemini family,
+then picks a model per subtask. The dispatcher checks every choice against the
+same live list and refuses unavailable or superseded models before anything
+launches. A new Gemini release is used as soon as agy offers it, on every
+install method.
+
+**Skill instructions still need an update.** Plugin installs check for a newer
+release once a day at session start and print the update command when one is
+available (disable with `GEMINI_SWARM_NO_UPDATE_CHECK=1`).
+
 For Claude Code marketplace installs, enable updates once: open `/plugin`, go
 to **Marketplaces**, select **gemini-swarm-skill**, and select **Enable
 auto-update**. Third-party marketplace auto-updates are off by default.
@@ -129,14 +141,13 @@ claude plugin update gemini-swarm@gemini-swarm-skill
 
 Manually copied skill folders are snapshots and do not update themselves.
 Pull the latest repository with `git pull --ff-only` and repeat the copy steps
-below for both complete skill folders, including their model catalogs. Remove
+below for both complete skill folders. Remove
 an older manual installation when switching to the plugin to avoid loading
 conflicting copies.
 
-Maintainers must bump `.claude-plugin/plugin.json`'s version when publishing
-skill or model-policy changes. Updating Git alone is not sufficient for clients
-that already cache the same plugin version. Existing installations must receive
-an update before the new routing policy can take effect.
+Maintainers: model releases need no change here. Changes to skill
+instructions or scripts need a version bump in
+`.claude-plugin/plugin.json`, because clients cache plugins by version.
 
 ## Other install methods
 
@@ -150,7 +161,7 @@ cp -r gemini-swarm-skill/skills/gemini-swarm ~/.claude/skills/
 cp -r gemini-swarm-skill/skills/gemini-imagegen ~/.claude/skills/
 ```
 
-The skill folders are self-contained: each `SKILL.md` holds the full playbook, a bundled model catalog records the routing policy, and gemini-swarm includes its dispatcher script.
+The skill folders are self-contained: each `SKILL.md` holds the full playbook, `references/models.md` explains how to choose a model, and `scripts/` holds the live model lister (plus the dispatcher for gemini-swarm).
 
 ### Other harnesses (Codex CLI, OpenCode, Antigravity CLI)
 
@@ -204,7 +215,7 @@ in tests/.
 What happens:
 
 1. The orchestrator **decomposes** it into ~20 independent subtasks (one per route — no two touch the same file, so no conflicts).
-2. It **routes** each using the [model catalog](skills/gemini-swarm/references/models.md): both mechanical test-writing and deeper reasoning use `flash-high`. It never asks you which.
+2. It **routes** each using the live model list and the [routing guide](skills/gemini-swarm/references/models.md): simple route tests go to the newest Flash model, while tests for tricky auth or concurrency logic can go to the flagship. It never asks you which.
 3. All ~20 `agy` jobs **run in parallel**, each writing its own test file directly to disk.
 4. The orchestrator **integrates**: confirms every file landed, writes a run log to `.gemini-swarm/logs/`, and reports back a short summary — *not* 20 walls of Gemini output.
 
@@ -244,11 +255,13 @@ gemini-swarm/
 │   ├── gemini-swarm/
 │   │   ├── SKILL.md               # the decomposition + dispatch + logging playbook
 │   │   ├── references/
-│   │   │   └── models.md          # single source of truth for model routing
+│   │   │   └── models.md          # how to choose a model (no model names)
 │   │   └── scripts/
-│   │       └── dispatch.sh        # symlink-free copy for standalone skill installs
+│   │       ├── dispatch.sh        # copy for standalone skill installs
+│   │       └── list-models.sh     # copy for standalone skill installs
 │   └── gemini-imagegen/
-│       ├── references/models.md   # catalog copy for standalone installation
+│       ├── references/models.md   # routing guide copy for standalone installs
+│       ├── scripts/list-models.sh # copy for standalone installs
 │       └── SKILL.md               # image generation via Gemini's generate_image tool
 ├── agents/
 │   └── gemini-dispatcher.md       # cheap Bash-only subagent that runs the dispatch
@@ -258,8 +271,9 @@ gemini-swarm/
 ├── docs/
 │   └── harnesses.md               # Codex CLI / OpenCode / Antigravity adapter notes
 └── scripts/
-    ├── check-model-catalog.sh     # checks model policy and bundled copies
-    └── dispatch.sh                # parallel dispatcher (source of truth)
+    ├── check-repo.sh              # repository checks (uses a fake agy)
+    ├── dispatch.sh                # parallel dispatcher (source of truth)
+    └── list-models.sh             # live list of the newest Gemini models in agy
 ```
 
 ---
@@ -268,12 +282,13 @@ gemini-swarm/
 
 - **One source of truth**: all orchestration logic lives in `SKILL.md`; the plugin command, the subagent, and the other-harness adapters are thin wrappers around it.
 - **Context hygiene**: the `gemini-dispatcher` subagent (a cheap model with only Bash/Read/Write) calls `scripts/dispatch.sh`, waits for all jobs, writes the run log, and returns *only a short summary plus the log path*. Raw Gemini stdout never enters the orchestrator's context.
+- **Live model choice**: `scripts/list-models.sh` reads `agy models` and shows only the newest version of each Gemini family; the orchestrator picks from it per subtask, and `dispatch.sh` refuses any model not on that list.
 - **True parallelism**: `dispatch.sh` launches every `agy --print` job concurrently with `&` and `wait`s for all of them. No concurrency cap, no throttling.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for repository checks and model-update
-requirements. Run `bash scripts/check-model-catalog.sh` before submitting changes.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for repository checks. Run
+`bash scripts/check-repo.sh` before submitting changes.
 
 ## License
 

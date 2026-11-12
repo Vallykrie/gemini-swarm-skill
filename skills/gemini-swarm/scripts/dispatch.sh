@@ -3,9 +3,15 @@
 #
 # Each TASKFILE is a subtask prompt file. Its first line must be a model header:
 #
-#     MODEL: <exact agy model name from the skill model catalog>
+#     MODEL: <model id from list-models.sh, e.g. the id of a Flash model>
 #
 #     <the subtask prompt, any number of lines>
+#
+# The orchestrator picks the model per subtask from the live list printed by
+# list-models.sh (next to this script). Before anything launches, every header
+# is checked against that list — one `agy models` call per run — and must name
+# a newest-version Gemini model by id or display name; otherwise the whole
+# run is refused with the list of valid choices.
 #
 # All jobs are launched concurrently (no cap, no throttling) and waited on.
 # Raw output is collected under LOG_ROOT/<ISO-timestamp>/ :
@@ -39,7 +45,7 @@ LOG_ROOT=".gemini-swarm/logs"
 TASKFILES=()
 
 usage() {
-  sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,38p' "$0" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -71,6 +77,7 @@ mkdir -p "$RUN_DIR"
 # agy's scratch dir), so anchor every job to the project root explicitly:
 # --add-dir puts it in the workspace, and a prompt preamble pins relative paths.
 ROOT="$(pwd)"
+LISTER="$(cd "$(dirname "$0")" && pwd -P)/list-models.sh"
 
 AGY_FLAGS=(--add-dir "$ROOT")
 if [ "$MODE" = "auto" ]; then
@@ -95,8 +102,28 @@ run_one() {
 }
 
 NAMES=()
+MODELS=()
 PIDS=()
 CLEANUP=()
+
+# Remove the run directory if validation fails before any job starts.
+trap 'rm -rf "$RUN_DIR"' EXIT
+
+# The live list of newest-version Gemini models: "id<TAB>display name" lines.
+[ -f "$LISTER" ] || { echo "dispatch.sh: model lister not found: $LISTER" >&2; exit 1; }
+AVAILABLE="$(bash "$LISTER" --ids)" || { echo "dispatch.sh: cannot list agy models" >&2; exit 1; }
+
+# resolve_model VALUE — print the model id for a MODEL header value
+resolve_model() {
+  local id
+  id="$(printf '%s\n' "$AVAILABLE" | awk -F'\t' -v m="$1" '$1 == m || $2 == m { print $1; exit }')"
+  [ -n "$id" ] && { printf '%s\n' "$id"; return 0; }
+  {
+    echo "dispatch.sh: '$1' is not a newest-version Gemini model in agy; choose one of:"
+    printf '%s\n' "$AVAILABLE" | cut -f1 | sed 's/^/  /'
+  } >&2
+  return 1
+}
 
 for f in "${TASKFILES[@]}"; do
   [ -f "$f" ] || { echo "dispatch.sh: task file not found: $f" >&2; exit 1; }
@@ -104,10 +131,11 @@ for f in "${TASKFILES[@]}"; do
   header="$(head -n 1 "$f")"
   case "$header" in
     MODEL:*|model:*|Model:*) ;;
-    *) echo "dispatch.sh: $f: first line must be 'MODEL: <agy model name>'" >&2; exit 1 ;;
+    *) echo "dispatch.sh: $f: first line must be 'MODEL: <model id>'" >&2; exit 1 ;;
   esac
-  model="$(printf '%s' "$header" | sed 's/^[Mm][Oo][Dd][Ee][Ll]:[[:space:]]*//')"
-  [ -n "$model" ] || { echo "dispatch.sh: $f: empty MODEL header" >&2; exit 1; }
+  value="$(printf '%s' "$header" | sed 's/^[Mm][Oo][Dd][Ee][Ll]:[[:space:]]*//; s/[[:space:]]*$//')"
+  [ -n "$value" ] || { echo "dispatch.sh: $f: empty MODEL header" >&2; exit 1; }
+  model="$(resolve_model "$value")" || { echo "dispatch.sh: $f: unusable model '$value'" >&2; exit 1; }
 
   name="$(basename "$f")"
   name="${name%.prompt.md}"; name="${name%.md}"; name="${name%.txt}"
@@ -119,10 +147,17 @@ for f in "${TASKFILES[@]}"; do
   tail -n +2 "$f" | sed '1{/^[[:space:]]*$/d;}' >> "$promptfile"
   tail -n +2 "$f" | grep -q '[^[:space:]]' || { echo "dispatch.sh: $f: prompt body is empty" >&2; exit 1; }
   CLEANUP+=("$promptfile")
-
-  run_one "$name" "$model" "$promptfile" &
-  PIDS+=($!)
   NAMES+=("$name")
+  MODELS+=("$model")
+done
+
+# Launch only after every task file has been validated and resolved, so a bad
+# file never leaves a partial swarm running.
+trap - EXIT
+for i in "${!NAMES[@]}"; do
+  name="${NAMES[$i]}"; model="${MODELS[$i]}"
+  run_one "$name" "$model" "$RUN_DIR/$name.prompt" &
+  PIDS+=($!)
   echo "dispatched: $name  [$model]  (pid $!)"
 done
 

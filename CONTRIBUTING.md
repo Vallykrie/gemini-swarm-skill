@@ -8,37 +8,40 @@ pull requests. Do not commit credentials, local agent settings, or run logs.
 From the repository root, run:
 
 ```bash
-bash scripts/check-model-catalog.sh
+bash scripts/check-repo.sh
 git diff --check
 ```
 
-The check validates the active routing profile, catalog links, standalone
-catalog and dispatcher copies, retired model references, and Bash syntax.
+The check validates the routing-guide links, the standalone copies of the
+guide and scripts, that no model names are hard-coded, Bash syntax, and model
+listing and dispatch validation against a fake `agy`.
 It requires Bash and standard Unix utilities; no API access is needed.
 GitHub Actions runs these checks for pushes and pull requests.
 
-## Model updates
+## Models
 
-The source catalog is `skills/gemini-swarm/references/models.md`. Confirm model
-names with `agy models`, update the catalog, and copy it to
-`skills/gemini-imagegen/references/models.md`. Both skills must remain usable
-when installed separately. Keep exact model versions out of other instructions.
-
-All workloads currently use `flash-high`, including heavy reasoning. A future
-Pro route requires an explicit policy change and corresponding validation
-updates; availability alone must not activate it.
+There is nothing to update when Gemini releases a model. The orchestrator
+reads the live list from `scripts/list-models.sh` (which wraps `agy models`
+and keeps the newest version of each family) and chooses per subtask using
+`skills/gemini-swarm/references/models.md`. Keep that guide free of model
+names and versions; the check enforces it. Edit the guide only to change how
+tiers are chosen, then copy it to `skills/gemini-imagegen/references/models.md`
+so both skills work when installed separately.
 
 ## Publishing updates
 
-Bump `version` in `.claude-plugin/plugin.json` for every published skill or
-model-policy change, run the checks, and merge to `main`. Keep the version in
-that manifest only. Users must enable marketplace auto-update or update manually;
-manual folder copies need to be recopied. See the README for user instructions.
+Bump `version` in `.claude-plugin/plugin.json` for every skill, script, or
+policy change, run the checks, and merge to `main`. Keep the version in that
+manifest only. The plugin's SessionStart hook (`hooks/check-update.sh`) tells
+users when a newer version is published; manual folder copies need to be
+recopied. See the README for user instructions.
 
 ## Dispatcher changes
 
-Edit `scripts/dispatch.sh`, then copy it to
-`skills/gemini-swarm/scripts/dispatch.sh`. Validate argument forwarding, failure
+Edit `scripts/dispatch.sh` and `scripts/list-models.sh`, then copy them to
+`skills/gemini-swarm/scripts/` (and `list-models.sh` to
+`skills/gemini-imagegen/scripts/`). `list-models.sh` honours an `AGY`
+environment variable, so you can point it at a mock. Validate argument forwarding, failure
 reporting, and both permission modes with a mock `agy` executable before testing
 against a live account. Never treat a successful process exit alone as proof
 that generated artifacts are correct.

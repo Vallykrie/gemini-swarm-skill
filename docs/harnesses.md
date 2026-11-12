@@ -129,7 +129,10 @@ Minimum viable adapter for any agent that can run shell commands:
 
 1. Copy the complete skill directory, including `references/models.md`, where the agent will read it when the user asks to "swarm"
    a task (system prompt include, rules file, `AGENTS.md`, etc.).
-2. Make sure `scripts/dispatch.sh` exists at a path mentioned alongside it.
+2. Make sure `scripts/dispatch.sh` and `scripts/list-models.sh` exist
+   side by side at a path mentioned alongside it (the orchestrator picks
+   models from the lister's live list, and the dispatcher validates every
+   choice against it).
 3. Map the host's permission mode to `--auto` / `--request` for the skill's
    `default` mode.
 

@@ -11,7 +11,7 @@ bulk work. **Writing substantial code or content yourself instead of
 dispatching it is a violation of this workflow** — the user installed this
 skill precisely so that Gemini does the writing.
 
-Verified against agy **1.0.15**. Re-check `agy --help` if flags seem wrong —
+Verified against agy **1.5.1**. Re-check `agy --help` if flags seem wrong —
 this CLI changes fast.
 
 ## Delegate by default
@@ -42,9 +42,14 @@ turn the remaining work into subtask prompts, and dispatch.
 
 1. `command -v agy` — if missing, stop and tell the user to install the
    Antigravity CLI.
-2. Locate the dispatcher script, in this order:
-   - `${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.sh` (plugin install)
-   - `scripts/dispatch.sh` next to this SKILL.md (standalone skill install)
+2. Locate the scripts directory, in this order:
+   - `${CLAUDE_PLUGIN_ROOT}/scripts/` (plugin install)
+   - `scripts/` next to this SKILL.md (standalone skill install)
+
+   It holds `dispatch.sh` and `list-models.sh`.
+3. Run `bash <scripts-dir>/list-models.sh` and keep its table for Step 3. It
+   is the live list of the newest Gemini models in agy; it is the only valid
+   source of model ids for this run.
 
 ## Step 1 — Resolve the autonomy mode
 
@@ -82,19 +87,22 @@ Split the task into **independent** subtasks:
   Do not throttle or batch: quota is not a constraint, and all subtasks launch
   concurrently.
 
-## Step 3 — Route a model per subtask
+## Step 3 — Choose a model per subtask
 
-Read the [model catalog](references/models.md), then choose a profile per
-subtask automatically — never ask the user which model:
+You choose the model for every subtask yourself — never ask the user. Follow
+the [model routing guide](references/models.md):
 
-- `flash-high` for all tasks, including reasoning-heavy or ambiguous work,
-  architecture, debugging, refactoring, and plain bulk work.
-- Do not route to Pro or lower thinking levels. Follow the catalog’s policy
-  if the configured model is unavailable.
+- Choose only from the `list-models.sh` table from Step 0. It lists the
+  newest version of each Gemini family with its thinking levels, straight
+  from `agy models`.
+- Match each subtask to a tier: Fast (`Flash`) at High thinking by default,
+  Flagship (`Pro` or a newer non-Flash family) for hard reasoning, Lightweight
+  (`Lite`) or Low thinking for trivial mechanical work.
+- Mix models within a run; route each subtask on its own difficulty.
 
-Copy the profile's exact `agy` model name from the catalog into the `MODEL:`
-header. The catalog is the single source of truth; never infer or hard-code a
-version elsewhere in this skill.
+Write the chosen **model id** (first column of the table) into the `MODEL:`
+header. Never use a model name from memory or from an earlier run: the
+dispatcher refuses any model that is not in the live list.
 
 ## Step 4 — Write the subtask files
 
@@ -103,7 +111,7 @@ Create one prompt file per subtask in a temp directory (e.g.
 then a blank line, then the prompt:
 
 ```
-MODEL: <exact agy model name from references/models.md>
+MODEL: <model id from list-models.sh>
 
 Summarize the public API of src/parser/ ...
 ```
@@ -150,7 +158,7 @@ succeeded/failed, and total wall-clock time.>
 ## Subtasks
 
 ### 01-short-slug — ok | FAIL
-- **Model**: <exact model name from the subtask's MODEL header>
+- **Model**: <model id from results.tsv>
 - **Duration**: NNs
 - **Files/artifacts touched**: `path/a`, `path/b` (from the TOUCHED: line;
   "none" for research tasks — note the .out artifact instead)
@@ -163,6 +171,7 @@ succeeded/failed, and total wall-clock time.>
   run log is the audit trail.
 - Verify integration-level correctness yourself (build/tests if relevant),
   fix small seams between subtask outputs, and only re-dispatch a subtask if
-  it hard-failed (non-zero exit).
+  it hard-failed (non-zero exit). A re-dispatch moves up one tier or one
+  thinking level.
 - Report to the user: the one-paragraph summary, per-subtask pass/fail, and
   the log file path.
